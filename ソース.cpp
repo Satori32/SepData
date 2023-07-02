@@ -29,29 +29,6 @@ struct Item//what is this.
 
 };
 
-/** /
-std::vector<Item> Write(const std::uint8_t* D, std::int32_t L) {
-
-	if (L <= 0) { return {}; }
-
-	Item I;
-	std::vector<Item> V;
-	std::uint64_t S = L + sizeof(Data) - sizeof(nullptr);
-
-	std::size_t X = std::min<std::int32_t>(L, std::numeric_limits<std::uint16_t>::max());
-
-	I.D.D = new std::uint8_t[X];
-	I.D.Size = X;
-	std::memcpy(I.D.D, (const void*)(&I.SH), I.SH.Size);
-
-
-	std::memcpy(I.D.D, D, X);
-	
-	V.push_back(I);
-
-	return V;
- }
-/**/
 std::vector<std::uint8_t> MakeVector(std::size_t L, unsigned int S = 0) {
 	std::vector<std::uint8_t> R;
 
@@ -64,59 +41,7 @@ std::vector<std::uint8_t> MakeVector(std::size_t L, unsigned int S = 0) {
 
 	return R;
 }
-/** /
-std::vector<std::uint8_t> Read(std::deque<Item> Q) {
-	Item A;
-	do {
-		A = Q.front();
-		Q.pop_front();
 
-		for (std::size_t i = 0; i < A.D.Size; i++) {
-			std::cout << A.D.D[i] << ',';
-		}
-		delete[] A.D.D;
-	} while (A.SH.Continue);
-
-	std::cout << std::endl;
-}
-/**/
-/** /
-std::vector<std::uint8_t> BuildData(const std::vector<std::uint8_t>& V) {
-
-	Data D = { "Application\n\0",16 + 2 + 4,V.size(),nullptr };
-	
-	std::vector<std::uint8_t> R(D.HeaderSize);
-
-	D.DataSize = V.size();
-
-	for (std::size_t i = 0; i < R.size(); i++) {
-		switch (i)
-		{
-		case 0:
-			for (int j = 0; j < sizeof(D.Signetuer); j++) {
-				R[j] = D.Signetuer[j];
-			}
-			break;
-		case 16:
-			R[i] = (D.HeaderSize) & 0xff;
-			R[i+1] = ((D.HeaderSize) &(0xff<<8))>>8;
-			break;
-		case 18:
-			R[i]=D.DataSize &(0xff);
-			R[i + 1] = (D.HeaderSize & (0xff << 8)) >> 8;
-			R[i + 2] = (D.HeaderSize & (0xff << 16)) >> 16;
-			R[i + 3] = (D.HeaderSize & (0xff << 24)) >> 24;
-			break;
-		default:
-			break;
-		}
-	}
-
-	R.insert(R.end(), V.begin(), V.end());
-
-	return R;
-}
-/**/
 
 std::vector<std::uint8_t> BuildData(const std::vector<std::uint8_t>& V) {
 	Data D = { "Application\n\0",16 + 2 + 4,V.size() };
@@ -161,6 +86,8 @@ std::vector<std::vector<std::uint8_t>> Separate(const std::vector<std::uint8_t>&
 
 	for (std::size_t i = 1; S.Continue; i++) {
 		if (H * i>=In.size()) { S.Continue = 0; }
+		if (S.Continue) { S.DataSize = H; }
+		else { S.DataSize = In.size() - ((i - 1) * H); }
 		WriteSystemHeader(S, V);
 		V.insert(V.end(), In.begin() + (H * (i-1)), In.begin() + std::min(H * i, In.size()));
 
@@ -197,7 +124,7 @@ std::vector<std::uint8_t> RipData(std::vector<std::uint8_t> In) {
 int main() {
 
 	auto V = MakeVector(16);
-	auto V2 = MakeVector(0xf);
+	auto V2 = MakeVector(0xffff);
 
 	auto& X = V2;
 
